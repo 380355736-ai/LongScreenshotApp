@@ -32,43 +32,36 @@ struct ResultView: View {
             }
             .padding()
 
-            // 图片预览（可缩放滚动）
+            // 图片可缩放滚动
             ScrollView([.vertical, .horizontal]) {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFit()
-                    .background(Color.white)
             }
             .background(Color(.systemGroupedBackground))
 
             // 底部操作栏
             HStack(spacing: 40) {
-                Button(action: backToHome) {
+                Button(action: { onBack() }) {
                     VStack(spacing: 4) {
-                        Image(systemName: "arrow.left")
-                            .font(.title3)
-                        Text("返回")
-                            .font(.caption)
+                        Image(systemName: "arrow.left").font(.title3)
+                        Text("返回").font(.caption)
                     }
                     .foregroundColor(.secondary)
                 }
 
                 Button(action: saveToPhotos) {
                     VStack(spacing: 4) {
-                        Image(systemName: "square.and.arrow.down.fill")
-                            .font(.title3)
-                        Text("保存")
-                            .font(.caption)
+                        Image(systemName: "square.and.arrow.down.fill").font(.title3)
+                        Text("保存").font(.caption)
                     }
                     .foregroundColor(.blue)
                 }
 
                 Button(action: share) {
                     VStack(spacing: 4) {
-                        Image(systemName: "square.and.arrow.up.fill")
-                            .font(.title3)
-                        Text("分享")
-                            .font(.caption)
+                        Image(systemName: "square.and.arrow.up.fill").font(.title3)
+                        Text("分享").font(.caption)
                     }
                     .foregroundColor(.blue)
                 }
@@ -85,25 +78,16 @@ struct ResultView: View {
 
     private func saveToPhotos() {
         ImageSaver.save(image: image) { success in
-            if success {
-                showSavedAlert = true
-            }
+            if success { showSavedAlert = true }
         }
     }
 
     private func share() {
-        let activityVC = UIActivityViewController(
-            activityItems: [image],
-            applicationActivities: nil
-        )
-
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let root = windowScene.windows.first?.rootViewController {
-            root.present(activityVC, animated: true)
-        }
-    }
-
-    private func backToHome() {
-        onBack()
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let root = windowScene.windows.first?.rootViewController else { return }
+        let items: [Any] = [image]
+        let activityVC = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        activityVC.popoverPresentationController?.sourceView = root.view
+        root.present(activityVC, animated: true)
     }
 }

@@ -5,23 +5,32 @@ import UIKit
 enum FrameExtractor {
 
     /// 从视频中按指定帧率提取 UIImage 数组
-    /// - Parameters:
-    ///   - url: 视频文件 URL
-    ///   - fps: 每秒提取帧数，默认 10
-    /// - Returns: 帧图像数组
     static func extract(from url: URL, fps: Int = 10) -> [UIImage] {
         let asset = AVAsset(url: url)
-        guard let videoTrack = asset.tracks(withMediaType: .video).first else {
-            print("[FrameExtractor] 无法读取视频轨道")
+        let durationSeconds: Double
+
+        // 使用现代 API 获取时长
+        let semaphore = DispatchSemaphore(value: 0)
+        var loadedDuration: Double = 0
+        Task {
+            do {
+                let dur = try await asset.load(.duration)
+                loadedDuration = CMTimeGetSeconds(dur)
+            } catch {
+                loadedDuration = 0
+            }
+            semaphore.signal()
+        }
+        semaphore.wait()
+
+        durationSeconds = loadedDuration
+        guard durationSeconds > 0 else {
+            print("[FrameExtractor] 无法获取视频时长")
             return []
         }
 
-        let duration = asset.duration
-        let durationSeconds = CMTimeGetSeconds(duration)
-        guard durationSeconds > 0 else { return [] }
-
         let totalFrames = Int(durationSeconds * Double(fps))
-        let interval = CMTimeMake(value: Int64(1000 / fps), timescale: 1000)
+        let interval = CMTime(value: Int64(1000 / fps), timescale: 1000)
 
         var frames: [UIImage] = []
         let generator = AVAssetImageGenerator(asset: asset)
@@ -29,34 +38,28 @@ enum FrameExtractor {
         generator.requestedTimeToleranceBefore = .zero
         generator.requestedTimeToleranceAfter = .zero
 
-        // 分批提取以控制内存
         var times: [NSValue] = []
         for i in 0..<totalFrames {
-            let time = CMTimeMake(
+            times.append(NSValue(time: CMTime(
                 value: Int64(i) * interval.value,
                 timescale: interval.timescale
-            )
-            times.append(NSValue(time: time))
+            )))
         }
 
-        let semaphore = DispatchSemaphore(value: 0)
-        var errorOccurred = false
-
-        generator.generateCGImagesAsynchronously(forTimes: times) { _, cgImage, _, result, error in
-            if result == .succeeded, let cgImage = cgImage {
+        // 同步提取避免回调死锁
+        for timeValue in times {
+            do {
+                let cgImage = try generator.copyCGImage(
+                    at: timeValue.timeValue,
+                    actualTime: nil
+                )
                 frames.append(UIImage(cgImage: cgImage))
-            } else if result == .failed {
-                errorOccurred = true
-            }
-
-            if frames.count == totalFrames || errorOccurred {
-                semaphore.signal()
+            } catch {
+                // 跳过无法提取的帧
             }
         }
 
-        semaphore.wait()
-
-        print("[FrameExtractor] 提取完成: \(frames.count) 帧 / 目标 \(totalFrames) 帧")
+        print("[FrameExtractor] 提取完成: \(frames.count) / \(totalFrames) 帧")
         return frames
     }
 }
