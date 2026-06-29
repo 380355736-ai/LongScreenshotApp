@@ -1,0 +1,21 @@
+name: Console
+
+includes:
+  - path: LongScreenshotApp/
+
+targets:
+  LongScreenshotApp:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - LongScreenshotApp/
+    settings:
+      base:
+        INFOPLIST_FILE: LongScreenshotApp/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.longscreenshot.app
+        DEVELOPMENT_TEAM: ""
+        SWIFT_VERSION: "5.0"
+        TARGETED_DEVICE_FAMILY: "1"
+    info:
+      path: LongScreenshotApp/Info.plist
