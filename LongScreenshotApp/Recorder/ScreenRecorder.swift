@@ -1,5 +1,6 @@
 import ReplayKit
 import AVFoundation
+import CoreMedia
 
 /// 屏幕录制管理器，使用 startCapture + AVAssetWriter 直接写入临时文件
 class ScreenRecorder: ObservableObject {
@@ -9,7 +10,6 @@ class ScreenRecorder: ObservableObject {
     private let recorder = RPScreenRecorder.shared()
     private var assetWriter: AVAssetWriter?
     private var videoInput: AVAssetWriterInput?
-    private var audioInput: AVAssetWriterInput?
     private var outputURL: URL?
     private var recordingStartTime: CMTime?
 
@@ -64,17 +64,11 @@ class ScreenRecorder: ObservableObject {
             switch bufferType {
             case .video:
                 if self.recordingStartTime == nil {
-                    let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer)
-                    self.recordingStartTime = pts
-                    self.assetWriter?.startSession(atSourceTime: pts)
+                    self.recordingStartTime = sampleBuffer.presentationTimeStamp
+                    self.assetWriter?.startSession(atSourceTime: sampleBuffer.presentationTimeStamp)
                 }
 
                 if let input = self.videoInput, input.isReadyForMoreMediaData {
-                    input.append(sampleBuffer)
-                }
-
-            case .audio:
-                if let input = self.audioInput, input.isReadyForMoreMediaData {
                     input.append(sampleBuffer)
                 }
 
@@ -118,7 +112,6 @@ class ScreenRecorder: ObservableObject {
             }
 
             self.videoInput?.markAsFinished()
-            self.audioInput?.markAsFinished()
 
             self.assetWriter?.finishWriting {
                 DispatchQueue.main.async {
