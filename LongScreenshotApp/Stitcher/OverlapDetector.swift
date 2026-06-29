@@ -16,9 +16,11 @@ class OverlapDetector {
             return pixelBasedOverlap(top: topImage, bottom: bottomImage)
         }
 
-        // 使用现代 Vision API (iOS 14+) 替换已废弃的 VNTranslationalImageRegistrationRequest
-        let request = VNGenerateTranslationalImageRegistrationRequest(
-            targeted: VNImageRequestTarget(cgImage: topBottom, orientation: .up)
+        // VNTranslationalImageRegistrationRequest 在 iOS 16 上仍可用（仅弃用未移除），
+        // 现代 API VNGenerateTranslationalImageRegistrationRequest 的 target 类型待确认
+        let request = VNTranslationalImageRegistrationRequest(
+            targetedCGImage: topBottom,
+            orientation: .up
         )
 
         let handler = VNImageRequestHandler(cgImage: bottomTop, options: [:])

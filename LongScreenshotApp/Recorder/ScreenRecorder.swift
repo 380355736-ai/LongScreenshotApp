@@ -52,22 +52,8 @@ class ScreenRecorder: ObservableObject {
         }
         writer.add(vInput)
 
-        // 音频输入（仅在麦克风启用时）
+        // 音频输入暂不启用（仅录制画面，不录麦克风）
         recorder.isMicrophoneEnabled = false
-        if recorder.isMicrophoneEnabled {
-            let audioSettings: [String: Any] = [
-                AVFormatIDKey: kAudioFormatMPEG4AAC,
-                AVNumberOfChannelsKey: 2,
-                AVSampleRateKey: 44100,
-                AVEncoderBitRateKey: 128000
-            ]
-            let aInput = AVAssetWriterInput(mediaType: .audio, outputSettings: audioSettings)
-            aInput.expectsMediaDataInRealTime = true
-            audioInput = aInput
-            if writer.canAdd(aInput) {
-                writer.add(aInput)
-            }
-        }
 
         writer.startWriting()
         recordingStartTime = nil
