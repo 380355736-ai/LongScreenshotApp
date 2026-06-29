@@ -1,7 +1,4 @@
-name: Console
-
-includes:
-  - path: LongScreenshotApp/
+name: LongScreenshotApp
 
 targets:
   LongScreenshotApp:
