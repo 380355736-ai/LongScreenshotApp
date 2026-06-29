@@ -1,16 +1,9 @@
 import SwiftUI
 
-/// 处理中的进度页面
+/// 处理中的进度页面（由外部驱动真实进度）
 struct ProcessingView: View {
-    @State private var progress: Double = 0
-    @State private var stepText = "提取视频帧..."
-
-    private let steps = [
-        "提取视频帧...",
-        "检测图像重叠...",
-        "拼接长图中...",
-        "裁剪优化中..."
-    ]
+    let progress: Double
+    let errorMessage: String?
 
     var body: some View {
         VStack(spacing: 28) {
@@ -27,44 +20,50 @@ struct ProcessingView: View {
                     .stroke(Color.blue, style: StrokeStyle(lineWidth: 6, lineCap: .round))
                     .frame(width: 100, height: 100)
                     .rotationEffect(.degrees(-90))
-                    .animation(.easeInOut(duration: 0.5), value: progress)
+                    .animation(.easeInOut(duration: 0.3), value: progress)
 
-                Image(systemName: "scissors")
+                Image(systemName: errorMessage != nil ? "exclamationmark.triangle" : "scissors")
                     .font(.title)
-                    .foregroundColor(.blue)
+                    .foregroundColor(errorMessage != nil ? .orange : .blue)
             }
 
-            Text("正在处理中...")
-                .font(.title2)
-                .fontWeight(.semibold)
+            if let error = errorMessage {
+                Text("处理失败")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.red)
 
-            Text(stepText)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                Text(error)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
+            } else {
+                Text("正在处理中...")
+                    .font(.title2)
+                    .fontWeight(.semibold)
 
-            // 进度条
-            ProgressView(value: progress, total: 1.0)
-                .progressViewStyle(LinearProgressViewStyle(tint: .blue))
-                .padding(.horizontal, 60)
+                Text(stepText(for: progress))
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+
+                // 进度条
+                ProgressView(value: progress, total: 1.0)
+                    .progressViewStyle(LinearProgressViewStyle(tint: .blue))
+                    .padding(.horizontal, 60)
+            }
 
             Spacer()
         }
-        .onAppear {
-            startSimulatedProgress()
-        }
     }
 
-    /// 模拟进度动画（实际进度由拼接过程驱动）
-    private func startSimulatedProgress() {
-        Timer.scheduledTimer(withTimeInterval: 1.2, repeats: true) { timer in
-            let stepIndex = min(Int(progress * 4), steps.count - 1)
-            stepText = steps[stepIndex]
-
-            if progress < 0.9 {
-                progress += Double.random(in: 0.1...0.25)
-            } else if progress >= 1.0 {
-                timer.invalidate()
-            }
+    private func stepText(for progress: Double) -> String {
+        switch progress {
+        case ..<0.25: return "提取视频帧..."
+        case ..<0.50: return "检测图像重叠..."
+        case ..<0.75: return "拼接长图中..."
+        case ..<1.0:  return "裁剪优化中..."
+        default:      return "完成"
         }
     }
 }

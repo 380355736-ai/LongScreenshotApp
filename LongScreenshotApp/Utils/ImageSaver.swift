@@ -1,4 +1,4 @@
-import UIKit
+﻿import UIKit
 import Photos
 
 /// 图片保存到相册
@@ -11,18 +11,32 @@ enum ImageSaver {
     static func save(image: UIImage, completion: @escaping (Bool) -> Void) {
         // 请求相册权限
         PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
-            guard status == .authorized else {
+            guard status == .authorized || status == .limited else {
                 DispatchQueue.main.async { completion(false) }
                 return
             }
 
+            // UIImageWriteToSavedPhotosAlbum 需要 target-action 回调
+            let saver = ImageSaverProxy()
+            saver.completion = completion
             UIImageWriteToSavedPhotosAlbum(
                 image,
-                nil,
-                nil,
+                saver,
+                #selector(ImageSaverProxy.image(_:didFinishSavingWithError:contextInfo:)),
                 nil
             )
-            DispatchQueue.main.async { completion(true) }
+        }
+    }
+}
+
+/// UIImageWriteToSavedPhotosAlbum 的代理对象
+private class ImageSaverProxy: NSObject {
+    var completion: ((Bool) -> Void)?
+
+    @objc func image(_ image: UIImage, didFinishSavingWithError error: Error?, contextInfo: UnsafeRawPointer?) {
+        DispatchQueue.main.async {
+            self.completion?(error == nil)
+            self.completion = nil
         }
     }
 }

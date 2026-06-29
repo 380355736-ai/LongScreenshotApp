@@ -16,15 +16,17 @@ class OverlapDetector {
             return pixelBasedOverlap(top: topImage, bottom: bottomImage)
         }
 
-        let request = VNTranslationalImageRegistrationRequest(
-            targetedCGImage: topBottom,
-            orientation: .up
+        // 使用现代 Vision API (iOS 14+) 替换已废弃的 VNTranslationalImageRegistrationRequest
+        let request = VNGenerateTranslationalImageRegistrationRequest(
+            targeted: VNImageRequestTarget(cgImage: topBottom, orientation: .up)
         )
 
         let handler = VNImageRequestHandler(cgImage: bottomTop, options: [:])
         do {
             try handler.perform([request])
             if let result = request.results?.first {
+                // alignmentTransform.ty 为目标图像相对于参考图像的 Y 轴偏移
+                // 目标(topBottom)在参考(bottomTop)中向上偏移 => 负值, 取绝对值即为重叠量
                 let overlap = -result.alignmentTransform.ty
                 return max(0, min(overlap, CGFloat(topCG.height) * 0.6))
             }
@@ -61,7 +63,7 @@ class OverlapDetector {
         return cgImage.cropping(to: CGRect(x: 0, y: 0, width: w, height: h * ratio))
     }
 
-    /// 像素级回退
+    /// 像素级回退（取 1/3 高度作为预估重叠）
     private func pixelBasedOverlap(top: UIImage, bottom: UIImage) -> CGFloat {
         guard let topCG = top.cgImage else { return 0 }
         return CGFloat(topCG.height) / 3.0
