@@ -16,3 +16,14 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
     info:
       path: LongScreenshotApp/Info.plist
+      properties:
+        CFBundleDevelopmentRegion: zh_CN
+        CFBundleDisplayName: 截长图
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UILaunchScreen:
+          UIColorName: AccentColor
+        NSPhotoLibraryUsageDescription: 需要访问相册以保存拼接后的长图
+        NSPhotoLibraryAddUsageDescription: 需要访问相册以保存拼接后的长图
